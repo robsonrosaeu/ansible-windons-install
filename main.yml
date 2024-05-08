@@ -1,0 +1,87 @@
+---
+- name: Validar e instalar o Python no Windows
+  hosts: camal
+  gather_facts: false
+  
+  tasks:
+    - name: Teste ping
+      win_ping:
+      register: ping 
+
+    - debug:
+        var: ping
+
+    - name: teste Python
+      win_shell:
+        python --version
+      register: python_version
+      ignore_errors: yes
+    
+    - debug:
+        msg: "A versão do python é {{ python_version.stdout }}."
+
+####################################
+
+    - name: Instalar Python
+      win_package:
+        path: C:\Users\camal\Downloads\python-3.12.3-amd64.exe
+        arguments: "/quiet InstallAllUsers=1 PrependPath=1"
+        state: present
+        
+
+    - name: teste Python
+      win_shell:
+        python --version
+      register: python_version_new
+    
+    - debug:
+        msg: "A versão do python é {{ python_version_new.stdout }}."
+
+#######################################
+    - name: Instalar Node
+      win_package:
+        path: C:\Users\camal\Downloads\node-v20.12.2-x64.msi
+        arguments: 
+        - /quiet 
+        - /qn
+        - /norestart
+        state: present
+
+    - name: teste Node
+      win_shell:
+        node -v
+      register: node_version_new
+    
+    - debug:
+        msg: "A versão do node é {{ node_version_new.stdout }}."
+
+###################################################
+
+    - name: Executar comando PowerShell para encontrar GUID do Node.js
+      win_shell: |
+        $nodeGUID = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" | Get-ItemProperty | Where-Object {$_.DisplayName -like "Node.js*"} | Select-Object -ExpandProperty UninstallString
+        Write-Output $nodeGUID
+      register: node_guid_output
+
+    - name: Exibir o GUID do Node.js
+      debug:
+        msg: "O GUID do Node.js é {{ node_guid_output.stdout }}"
+
+    - name: Executar comando PowerShell para encontrar GUID do Python
+      win_shell: |
+        $pythonGUID = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" | Get-ItemProperty | Where-Object {$_.DisplayName -like "Python*"} | Select-Object -ExpandProperty UninstallString
+        Write-Output $pythonGUID
+      register: python_guid_output
+
+    - name: Exibir o GUID do Python
+      debug:
+        msg: "O GUID do Python é {{ python_guid_output.stdout }}" 
+##############################################################
+
+
+    #- name: Desinstalar Node.js usando comando PowerShell
+      #win_shell: |
+        #Start-Process msiexec.exe -ArgumentList "/x {{ node_guid_output.stdout }} /quiet /norestart" -Wait
+      
+    
+
